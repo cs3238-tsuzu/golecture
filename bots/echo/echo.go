@@ -13,6 +13,7 @@ type Message struct {
 
 func main() {
 	conn, _, err := websocket.DefaultDialer.Dial("ws://localhost:8080/ws", nil)
+	//conn, _, err := websocket.DefaultDialer.Dial("wss://gochat.modoki.tsuzu.xyz/ws", nil)
 
 	if err != nil {
 		panic(err)
