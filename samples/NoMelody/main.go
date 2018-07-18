@@ -2,6 +2,8 @@ package main
 
 import (
 	"log"
+	"strconv"
+	"sync/atomic"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -10,6 +12,8 @@ import (
 type Message struct {
 	Message string `json:"message"`
 	User    string `json:"user"`
+	UID     string `json:"uid"`
+	ID      string `json:"id"`
 }
 
 type Hub struct {
@@ -20,10 +24,15 @@ type Hub struct {
 func (h *Hub) run() {
 	var conns []*websocket.Conn
 
+	idCounter := 1
+
 	for {
 		select {
 		case msg := <-h.messageChan:
 			removed := []int{}
+
+			msg.ID = strconv.Itoa(idCounter)
+			idCounter++
 
 			for i := range conns {
 				if err := conns[i].WriteJSON(msg); err != nil {
@@ -69,6 +78,8 @@ func main() {
 
 	go hub.run()
 
+	var uidCounter int32
+
 	r.GET("/ws", func(c *gin.Context) {
 		log.Println("Connected")
 		conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
@@ -77,6 +88,8 @@ func main() {
 			log.Println(err)
 			return
 		}
+
+		uid := atomic.AddInt32(&uidCounter, 1)
 
 		go func() {
 			defer conn.Close()
@@ -88,6 +101,8 @@ func main() {
 				if err := conn.ReadJSON(&msg); err != nil {
 					return
 				}
+
+				msg.UID = strconv.Itoa(int(uid))
 
 				hub.broadcast(msg)
 			}

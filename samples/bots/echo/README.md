@@ -1,0 +1,5 @@
+エコーBOT
+
+/echo Hello
+↓
+Hello
